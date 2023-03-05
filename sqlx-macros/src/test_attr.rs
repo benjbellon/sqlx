@@ -3,13 +3,13 @@ use quote::quote;
 use syn::LitStr;
 
 struct Args {
-    fixtures: Vec<LitStr>,
+    fixtures: Vec<(LitStr, LitStr)>,
     migrations: MigrationsOpt,
 }
 
 enum MigrationsOpt {
     InferredPath,
-    ExplicitPath(LitStr),
+    ExplicitPath(LitStr, LitStr),
     ExplicitMigrator(syn::Path),
     Disabled,
 }
@@ -72,27 +72,29 @@ fn expand_advanced(args: syn::AttributeArgs, input: syn::ItemFn) -> crate::Resul
 
     let fn_arg_types = inputs.iter().map(|_| quote! { _ });
 
-    let fixtures = args.fixtures.into_iter().map(|fixture| {
-        let path = format!("fixtures/{}.sql", fixture.value());
+    let fixtures = args.fixtures.into_iter().map(|(file, schema)| {
+        let path = format!("fixtures/{}.sql", file.value());
+        let schema = format!("{}", schema.value());
 
         quote! {
             ::sqlx::testing::TestFixture {
                 path: #path,
+                schema: #schema,
                 contents: include_str!(#path),
             }
         }
     });
 
     let migrations = match args.migrations {
-        MigrationsOpt::ExplicitPath(path) => {
-            let migrator = crate::migrate::expand_migrator_from_lit_dir(path)?;
+        MigrationsOpt::ExplicitPath(path, schema) => {
+            let migrator = crate::migrate::expand_migrator_from_lit_dir(path, schema)?;
             quote! { args.migrator(&#migrator); }
         }
         MigrationsOpt::InferredPath if !inputs.is_empty() => {
             let migrations_path = crate::common::resolve_path("./migrations", Span::call_site())?;
 
             if migrations_path.is_dir() {
-                let migrator = crate::migrate::expand_migrator(&migrations_path)?;
+                let migrator = crate::migrate::expand_migrator(&migrations_path, "default_schema")?;
                 quote! { args.migrator(&#migrator); }
             } else {
                 quote! {}
@@ -130,6 +132,7 @@ fn expand_advanced(args: syn::AttributeArgs, input: syn::ItemFn) -> crate::Resul
 fn parse_args(attr_args: syn::AttributeArgs) -> syn::Result<Args> {
     let mut fixtures = vec![];
     let mut migrations = MigrationsOpt::InferredPath;
+    let default_schema = LitStr::new("default_schema", Span::call_site());
 
     for arg in attr_args {
         match arg {
@@ -140,7 +143,7 @@ fn parse_args(attr_args: syn::AttributeArgs) -> syn::Result<Args> {
 
                 for nested in list.nested {
                     match nested {
-                        syn::NestedMeta::Lit(syn::Lit::Str(litstr)) => fixtures.push(litstr),
+                        syn::NestedMeta::Lit(syn::Lit::Str(litstr)) => fixtures.push((litstr, default_schema.clone())),
                         other => {
                             return Err(syn::Error::new_spanned(other, "expected string literal"))
                         }
@@ -171,7 +174,7 @@ fn parse_args(attr_args: syn::AttributeArgs) -> syn::Result<Args> {
                         }
                     }
                     // migrations = "<path>"
-                    syn::Lit::Str(litstr) => MigrationsOpt::ExplicitPath(litstr),
+                    syn::Lit::Str(litstr) => MigrationsOpt::ExplicitPath(litstr, default_schema.clone()),
                     _ => {
                         return Err(syn::Error::new_spanned(
                             namevalue,
@@ -204,7 +207,7 @@ fn parse_args(attr_args: syn::AttributeArgs) -> syn::Result<Args> {
             other => {
                 return Err(syn::Error::new_spanned(
                     other,
-                    "expected `fixtures(\"<filename>\", ...)` or `migrations = \"<path>\" | false` or `migrator = \"<rust path>\"`",
+                    "expected `fixtures(\"<filename>\", \"<schema>\", ...)` or `migrations = \"<path>\" | false` or `migrator = \"<rust path>\"`",
                 ))
             }
         }

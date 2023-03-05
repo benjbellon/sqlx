@@ -138,16 +138,17 @@ impl Migrate for AnyConnection {
 
     fn list_applied_migrations(
         &mut self,
+        schema: Option<String>,
     ) -> BoxFuture<'_, Result<Vec<AppliedMigration>, MigrateError>> {
         match &mut self.0 {
             #[cfg(feature = "postgres")]
-            AnyConnectionKind::Postgres(conn) => conn.list_applied_migrations(),
+            AnyConnectionKind::Postgres(conn) => conn.list_applied_migrations(schema),
 
             #[cfg(feature = "sqlite")]
-            AnyConnectionKind::Sqlite(conn) => conn.list_applied_migrations(),
+            AnyConnectionKind::Sqlite(conn) => conn.list_applied_migrations(None),
 
             #[cfg(feature = "mysql")]
-            AnyConnectionKind::MySql(conn) => conn.list_applied_migrations(),
+            AnyConnectionKind::MySql(conn) => conn.list_applied_migrations(None),
 
             #[cfg(feature = "mssql")]
             AnyConnectionKind::Mssql(_conn) => unimplemented!(),

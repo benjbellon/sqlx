@@ -23,6 +23,7 @@ impl ToTokens for QuotedMigrationType {
 
 struct QuotedMigration {
     version: i64,
+    schema: String,
     description: String,
     migration_type: QuotedMigrationType,
     path: String,
@@ -33,6 +34,7 @@ impl ToTokens for QuotedMigration {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let QuotedMigration {
             version,
+            schema,
             description,
             migration_type,
             path,
@@ -42,6 +44,7 @@ impl ToTokens for QuotedMigration {
         let ts = quote! {
             ::sqlx::migrate::Migration {
                 version: #version,
+                schema: ::std::borrow::Cow::Borrowed(#schema),
                 description: ::std::borrow::Cow::Borrowed(#description),
                 migration_type:  #migration_type,
                 // this tells the compiler to watch this path for changes
@@ -57,20 +60,24 @@ impl ToTokens for QuotedMigration {
 }
 
 // mostly copied from sqlx-core/src/migrate/source.rs
-pub(crate) fn expand_migrator_from_lit_dir(dir: LitStr) -> crate::Result<TokenStream> {
-    expand_migrator_from_dir(&dir.value(), dir.span())
+pub(crate) fn expand_migrator_from_lit_dir(
+    dir: LitStr,
+    schema: LitStr,
+) -> crate::Result<TokenStream> {
+    expand_migrator_from_dir(&dir.value(), &schema.value(), dir.span())
 }
 
 pub(crate) fn expand_migrator_from_dir(
     dir: &str,
+    schema: &str,
     err_span: proc_macro2::Span,
 ) -> crate::Result<TokenStream> {
     let path = crate::common::resolve_path(dir, err_span)?;
 
-    expand_migrator(&path)
+    expand_migrator(&path, schema)
 }
 
-pub(crate) fn expand_migrator(path: &Path) -> crate::Result<TokenStream> {
+pub(crate) fn expand_migrator(path: &Path, schema: &str) -> crate::Result<TokenStream> {
     let mut migrations = Vec::new();
 
     for entry in fs::read_dir(&path)? {
@@ -117,6 +124,7 @@ pub(crate) fn expand_migrator(path: &Path) -> crate::Result<TokenStream> {
 
         migrations.push(QuotedMigration {
             version,
+            schema: schema.to_string(),
             description,
             migration_type: QuotedMigrationType(migration_type),
             path,

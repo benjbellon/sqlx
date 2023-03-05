@@ -84,10 +84,27 @@ pub fn derive_from_row(input: TokenStream) -> TokenStream {
 #[cfg(feature = "migrate")]
 #[proc_macro]
 pub fn migrate(input: TokenStream) -> TokenStream {
-    use syn::LitStr;
+    use syn::{parse::Parse, LitStr, Token};
 
-    let input = syn::parse_macro_input!(input as LitStr);
-    match migrate::expand_migrator_from_lit_dir(input) {
+    struct MigrateInput {
+        dir: LitStr,
+        #[allow(dead_code)]
+        command: Token![,],
+        schema: LitStr,
+    }
+
+    impl Parse for MigrateInput {
+        fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+            Ok(Self {
+                dir: input.parse()?,
+                command: input.parse()?,
+                schema: input.parse()?,
+            })
+        }
+    }
+
+    let input = syn::parse_macro_input!(input as MigrateInput);
+    match migrate::expand_migrator_from_lit_dir(input.dir, input.schema) {
         Ok(ts) => ts.into(),
         Err(e) => {
             if let Some(parse_err) = e.downcast_ref::<syn::Error>() {

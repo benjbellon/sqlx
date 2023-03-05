@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS _sqlx_migrations (
 
     fn list_applied_migrations(
         &mut self,
+        _: Option<String>,
     ) -> BoxFuture<'_, Result<Vec<AppliedMigration>, MigrateError>> {
         Box::pin(async move {
             // language=SQLite

@@ -8,7 +8,7 @@ use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 
 pub trait MigrationSource<'s>: Debug {
-    fn resolve(self) -> BoxFuture<'s, Result<Vec<Migration>, BoxDynError>>;
+    fn resolve(self, schema: String) -> BoxFuture<'s, Result<Vec<Migration>, BoxDynError>>;
 }
 
 /// Implementation of the `MigrationSource` for [std::path::Path].
@@ -18,7 +18,7 @@ pub trait MigrationSource<'s>: Debug {
 /// where `<VERSION>` is a string that can be parsed into `i64` and its value is greater than zero,
 /// and `<DESCRIPTION>` is a string.
 impl<'s> MigrationSource<'s> for &'s Path {
-    fn resolve(self) -> BoxFuture<'s, Result<Vec<Migration>, BoxDynError>> {
+    fn resolve(self, schema: String) -> BoxFuture<'s, Result<Vec<Migration>, BoxDynError>> {
         Box::pin(async move {
             #[allow(unused_mut)]
             let mut s = fs::read_dir(self.canonicalize()?).await?;
@@ -56,6 +56,7 @@ impl<'s> MigrationSource<'s> for &'s Path {
 
                 migrations.push(Migration::new(
                     version,
+                    Cow::Owned(schema.to_owned()),
                     Cow::Owned(description),
                     migration_type,
                     Cow::Owned(sql),
@@ -71,7 +72,7 @@ impl<'s> MigrationSource<'s> for &'s Path {
 }
 
 impl MigrationSource<'static> for PathBuf {
-    fn resolve(self) -> BoxFuture<'static, Result<Vec<Migration>, BoxDynError>> {
-        Box::pin(async move { self.as_path().resolve().await })
+    fn resolve(self, schema: String) -> BoxFuture<'static, Result<Vec<Migration>, BoxDynError>> {
+        Box::pin(async move { self.as_path().resolve(schema).await })
     }
 }

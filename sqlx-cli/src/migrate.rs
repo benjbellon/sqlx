@@ -38,6 +38,7 @@ fn create_file(
 
 pub async fn add(
     migration_source: &str,
+    schema: &str,
     description: &str,
     reversible: bool,
 ) -> anyhow::Result<()> {
@@ -48,7 +49,7 @@ pub async fn add(
         .map(|mut dir| dir.next().is_some())
         .unwrap_or(false);
 
-    let migrator = Migrator::new(Path::new(migration_source)).await?;
+    let migrator = Migrator::new(Path::new(migration_source), schema.to_string()).await?;
     // This checks if all existing migrations are of the same type as the reverisble flag passed
     for migration in migrator.iter() {
         if migration.migration_type.is_reversible() != reversible {
@@ -116,14 +117,18 @@ fn short_checksum(checksum: &[u8]) -> String {
     s
 }
 
-pub async fn info(migration_source: &str, connect_opts: &ConnectOpts) -> anyhow::Result<()> {
-    let migrator = Migrator::new(Path::new(migration_source)).await?;
+pub async fn info(
+    migration_source: &str,
+    schema: &str,
+    connect_opts: &ConnectOpts,
+) -> anyhow::Result<()> {
+    let migrator = Migrator::new(Path::new(migration_source), schema.to_string()).await?;
     let mut conn = crate::connect(&connect_opts).await?;
 
     conn.ensure_migrations_table().await?;
 
     let applied_migrations: HashMap<_, _> = conn
-        .list_applied_migrations()
+        .list_applied_migrations(unimplemented!("does not account for schema scoped chagnes"))
         .await?
         .into_iter()
         .map(|m| (m.version, m))
@@ -195,11 +200,12 @@ fn validate_applied_migrations(
 
 pub async fn run(
     migration_source: &str,
+    schema: &str,
     connect_opts: &ConnectOpts,
     dry_run: bool,
     ignore_missing: bool,
 ) -> anyhow::Result<()> {
-    let migrator = Migrator::new(Path::new(migration_source)).await?;
+    let migrator = Migrator::new(Path::new(migration_source), schema.to_string()).await?;
     let mut conn = crate::connect(connect_opts).await?;
 
     conn.ensure_migrations_table().await?;
@@ -209,7 +215,9 @@ pub async fn run(
         bail!(MigrateError::Dirty(version));
     }
 
-    let applied_migrations = conn.list_applied_migrations().await?;
+    let applied_migrations = conn
+        .list_applied_migrations(unimplemented!("does not account for schema scoped changes"))
+        .await?;
     validate_applied_migrations(&applied_migrations, &migrator, ignore_missing)?;
 
     let applied_migrations: HashMap<_, _> = applied_migrations
@@ -226,7 +234,10 @@ pub async fn run(
         match applied_migrations.get(&migration.version) {
             Some(applied_migration) => {
                 if migration.checksum != applied_migration.checksum {
-                    bail!(MigrateError::VersionMismatch(migration.version));
+                    bail!(MigrateError::VersionMismatch(
+                        schema.clone().to_string(),
+                        migration.version
+                    ));
                 }
             }
             None => {

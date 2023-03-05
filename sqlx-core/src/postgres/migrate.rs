@@ -92,6 +92,7 @@ impl Migrate for PgConnection {
                 r#"
 CREATE TABLE IF NOT EXISTS _sqlx_migrations (
     version BIGINT PRIMARY KEY,
+    schema TEXT NOT NULL,
     description TEXT NOT NULL,
     installed_on TIMESTAMPTZ NOT NULL DEFAULT now(),
     success BOOLEAN NOT NULL,
@@ -134,13 +135,16 @@ CREATE TABLE IF NOT EXISTS _sqlx_migrations (
 
     fn list_applied_migrations(
         &mut self,
+        schema: Option<String>,
     ) -> BoxFuture<'_, Result<Vec<AppliedMigration>, MigrateError>> {
         Box::pin(async move {
             // language=SQL
-            let rows: Vec<(i64, Vec<u8>)> =
-                query_as("SELECT version, checksum FROM _sqlx_migrations ORDER BY version")
-                    .fetch_all(self)
-                    .await?;
+            let rows: Vec<(i64, Vec<u8>)> = query_as(
+                "SELECT version, checksum FROM _sqlx_migrations WHERE schema = $1 ORDER BY version",
+            )
+            .bind(schema)
+            .fetch_all(self)
+            .await?;
 
             let migrations = rows
                 .into_iter()
@@ -206,7 +210,7 @@ CREATE TABLE IF NOT EXISTS _sqlx_migrations (
                 return if checksum == &*migration.checksum {
                     Ok(())
                 } else {
-                    Err(MigrateError::VersionMismatch(migration.version))
+                    Err(MigrateError::VersionMismatch(panic!(), migration.version))
                 };
             } else {
                 Err(MigrateError::VersionMissing(migration.version))
@@ -232,11 +236,12 @@ CREATE TABLE IF NOT EXISTS _sqlx_migrations (
             // language=SQL
             let _ = query(
                 r#"
-    INSERT INTO _sqlx_migrations ( version, description, success, checksum, execution_time )
-    VALUES ( $1, $2, TRUE, $3, -1 )
+    INSERT INTO _sqlx_migrations ( version, schema, description, success, checksum, execution_time )
+    VALUES ( $1, $2, $3, TRUE, $4, -1 )
                 "#,
             )
             .bind(migration.version)
+            .bind(migration.schema.clone())
             .bind(&*migration.description)
             .bind(&*migration.checksum)
             .execute(&mut tx)

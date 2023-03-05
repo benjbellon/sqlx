@@ -12,8 +12,8 @@ pub enum MigrateError {
     #[error("migration {0} was previously applied but is missing in the resolved migrations")]
     VersionMissing(i64),
 
-    #[error("migration {0} was previously applied but has been modified")]
-    VersionMismatch(i64),
+    #[error("migration {1} for schema {0} was previously applied but has been modified")]
+    VersionMismatch(String, i64),
 
     #[error("cannot mix reversible migrations with simple migrations. All migrations should be reversible or simple migrations")]
     InvalidMixReversibleAndSimple,

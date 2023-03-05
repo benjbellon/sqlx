@@ -50,12 +50,12 @@ impl Migrator {
     /// # }
     /// ```
     /// See [MigrationSource] for details on structure of the `./migrations` directory.
-    pub async fn new<'s, S>(source: S) -> Result<Self, MigrateError>
+    pub async fn new<'s, S>(source: S, schema: String) -> Result<Self, MigrateError>
     where
         S: MigrationSource<'s>,
     {
         Ok(Self {
-            migrations: Cow::Owned(source.resolve().await.map_err(MigrateError::Source)?),
+            migrations: Cow::Owned(source.resolve(schema).await.map_err(MigrateError::Source)?),
             ignore_missing: false,
             locking: true,
         })
@@ -126,32 +126,43 @@ impl Migrator {
         // eventually this will likely migrate previous versions of the table
         conn.ensure_migrations_table().await?;
 
-        let version = conn.dirty_version().await?;
-        if let Some(version) = version {
-            return Err(MigrateError::Dirty(version));
-        }
+        let mut chunks: HashMap<String, Vec<&Migration>> = HashMap::new();
+        self.iter().for_each(|migration| {
+            let e = chunks.entry(migration.schema.to_string()).or_default();
+            e.push(migration);
+        });
 
-        let applied_migrations = conn.list_applied_migrations().await?;
-        validate_applied_migrations(&applied_migrations, self)?;
-
-        let applied_migrations: HashMap<_, _> = applied_migrations
-            .into_iter()
-            .map(|m| (m.version, m))
-            .collect();
-
-        for migration in self.iter() {
-            if migration.migration_type.is_down_migration() {
-                continue;
+        for (schema, migrations) in chunks {
+            let version = conn.dirty_version().await?;
+            if let Some(version) = version {
+                return Err(MigrateError::Dirty(version));
             }
 
-            match applied_migrations.get(&migration.version) {
-                Some(applied_migration) => {
-                    if migration.checksum != applied_migration.checksum {
-                        return Err(MigrateError::VersionMismatch(migration.version));
-                    }
+            let applied_migrations = conn.list_applied_migrations(Some(schema.clone())).await?;
+            validate_applied_migrations(&applied_migrations, self)?;
+
+            let applied_migrations: HashMap<_, _> = applied_migrations
+                .into_iter()
+                .map(|m| (m.version, m))
+                .collect();
+
+            for migration in migrations {
+                if migration.migration_type.is_down_migration() {
+                    continue;
                 }
-                None => {
-                    conn.apply(migration).await?;
+
+                match applied_migrations.get(&migration.version) {
+                    Some(applied_migration) => {
+                        if migration.checksum != applied_migration.checksum {
+                            return Err(MigrateError::VersionMismatch(
+                                schema.clone(),
+                                migration.version,
+                            ));
+                        }
+                    }
+                    None => {
+                        conn.apply(migration).await?;
+                    }
                 }
             }
         }
@@ -202,7 +213,7 @@ impl Migrator {
             return Err(MigrateError::Dirty(version));
         }
 
-        let applied_migrations = conn.list_applied_migrations().await?;
+        let applied_migrations = conn.list_applied_migrations(None).await?;
         validate_applied_migrations(&applied_migrations, self)?;
 
         let applied_migrations: HashMap<_, _> = applied_migrations

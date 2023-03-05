@@ -43,6 +43,7 @@ pub trait Migrate {
     // Return the ordered list of applied migrations
     fn list_applied_migrations(
         &mut self,
+        schema: Option<String>,
     ) -> BoxFuture<'_, Result<Vec<AppliedMigration>, MigrateError>>;
 
     // Should acquire a database lock so that only one migration process

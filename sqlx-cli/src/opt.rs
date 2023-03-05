@@ -77,6 +77,8 @@ pub enum DatabaseCommand {
         #[clap(flatten)]
         source: Source,
 
+        schema: String,
+
         #[clap(flatten)]
         connect_opts: ConnectOpts,
     },
@@ -85,6 +87,8 @@ pub enum DatabaseCommand {
     Setup {
         #[clap(flatten)]
         source: Source,
+
+        schema: String,
 
         #[clap(flatten)]
         connect_opts: ConnectOpts,
@@ -113,6 +117,8 @@ pub enum MigrateCommand {
         #[clap(flatten)]
         source: SourceOverride,
 
+        schema: String,
+
         /// If true, creates a pair of up and down migration files with same version
         /// else creates a single sql file
         #[clap(short)]
@@ -123,6 +129,8 @@ pub enum MigrateCommand {
     Run {
         #[clap(flatten)]
         source: SourceOverride,
+
+        schema: String,
 
         /// List all the migrations to be run without applying
         #[clap(long)]
@@ -140,6 +148,8 @@ pub enum MigrateCommand {
         #[clap(flatten)]
         source: SourceOverride,
 
+        schema: String,
+
         /// List the migration to be reverted without applying
         #[clap(long)]
         dry_run: bool,
@@ -155,6 +165,8 @@ pub enum MigrateCommand {
     Info {
         #[clap(flatten)]
         source: SourceOverride,
+
+        schema: String,
 
         #[clap(flatten)]
         connect_opts: ConnectOpts,

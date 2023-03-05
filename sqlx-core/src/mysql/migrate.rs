@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS _sqlx_migrations (
                 return if checksum == &*migration.checksum {
                     Ok(())
                 } else {
-                    Err(MigrateError::VersionMismatch(migration.version))
+                    Err(MigrateError::VersionMismatch("".into(), migration.version))
                 };
             } else {
                 Err(MigrateError::VersionMissing(migration.version))

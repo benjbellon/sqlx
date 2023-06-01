@@ -215,9 +215,7 @@ pub async fn run(
         bail!(MigrateError::Dirty(version));
     }
 
-    let applied_migrations = conn
-        .list_applied_migrations(unimplemented!("does not account for schema scoped changes"))
-        .await?;
+    let applied_migrations = conn.list_applied_migrations(Some(schema.into())).await?;
     validate_applied_migrations(&applied_migrations, &migrator, ignore_missing)?;
 
     let applied_migrations: HashMap<_, _> = applied_migrations
@@ -265,11 +263,12 @@ pub async fn run(
 
 pub async fn revert(
     migration_source: &str,
+    schema: &str,
     connect_opts: &ConnectOpts,
     dry_run: bool,
     ignore_missing: bool,
 ) -> anyhow::Result<()> {
-    let migrator = Migrator::new(Path::new(migration_source)).await?;
+    let migrator = Migrator::new(Path::new(migration_source), schema.into()).await?;
     let mut conn = crate::connect(&connect_opts).await?;
 
     conn.ensure_migrations_table().await?;
@@ -279,7 +278,7 @@ pub async fn revert(
         bail!(MigrateError::Dirty(version));
     }
 
-    let applied_migrations = conn.list_applied_migrations().await?;
+    let applied_migrations = conn.list_applied_migrations(Some(schema.into())).await?;
     validate_applied_migrations(&applied_migrations, &migrator, ignore_missing)?;
 
     let applied_migrations: HashMap<_, _> = applied_migrations

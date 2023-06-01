@@ -21,17 +21,28 @@ pub async fn run(opt: Opt) -> Result<()> {
         Command::Migrate(migrate) => match migrate.command {
             MigrateCommand::Add {
                 source,
+                schema,
                 description,
                 reversible,
-            } => migrate::add(source.resolve(&migrate.source), &description, reversible).await?,
+            } => {
+                migrate::add(
+                    source.resolve(&migrate.source),
+                    &schema,
+                    &description,
+                    reversible,
+                )
+                .await?
+            }
             MigrateCommand::Run {
                 source,
+                schema,
                 dry_run,
                 ignore_missing,
                 connect_opts,
             } => {
                 migrate::run(
                     source.resolve(&migrate.source),
+                    &schema,
                     &connect_opts,
                     dry_run,
                     *ignore_missing,
@@ -40,12 +51,14 @@ pub async fn run(opt: Opt) -> Result<()> {
             }
             MigrateCommand::Revert {
                 source,
+                schema,
                 dry_run,
                 ignore_missing,
                 connect_opts,
             } => {
                 migrate::revert(
                     source.resolve(&migrate.source),
+                    &schema,
                     &connect_opts,
                     dry_run,
                     *ignore_missing,
@@ -54,8 +67,9 @@ pub async fn run(opt: Opt) -> Result<()> {
             }
             MigrateCommand::Info {
                 source,
+                schema,
                 connect_opts,
-            } => migrate::info(source.resolve(&migrate.source), &connect_opts).await?,
+            } => migrate::info(source.resolve(&migrate.source), &schema, &connect_opts).await?,
             MigrateCommand::BuildScript { source, force } => {
                 migrate::build_script(source.resolve(&migrate.source), force)?
             }
@@ -68,14 +82,16 @@ pub async fn run(opt: Opt) -> Result<()> {
                 connect_opts,
             } => database::drop(&connect_opts, !confirmation.yes).await?,
             DatabaseCommand::Reset {
+                schema,
                 confirmation,
                 source,
                 connect_opts,
-            } => database::reset(&source, &connect_opts, !confirmation.yes).await?,
+            } => database::reset(&source, &schema, &connect_opts, !confirmation.yes).await?,
             DatabaseCommand::Setup {
+                schema,
                 source,
                 connect_opts,
-            } => database::setup(&source, &connect_opts).await?,
+            } => database::setup(&source, &schema, &connect_opts).await?,
         },
 
         Command::Prepare {

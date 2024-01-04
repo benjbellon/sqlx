@@ -55,7 +55,7 @@ pub async fn reset(
 
 pub async fn setup(migration_source: &str, connect_opts: &ConnectOpts) -> anyhow::Result<()> {
     create(connect_opts).await?;
-    migrate::run(migration_source, connect_opts, false, false, None).await
+    migrate::run(migration_source, connect_opts, false, false, None, None).await
 }
 
 fn ask_to_continue_drop(db_url: &str) -> bool {

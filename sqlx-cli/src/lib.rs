@@ -90,6 +90,7 @@ pub async fn run(opt: Opt) -> Result<()> {
             DatabaseCommand::Setup {
                 source,
                 connect_opts,
+		migration_table,
             } => database::setup(&source, &connect_opts).await?,
         },
 

@@ -1,0 +1,11 @@
+diff a/sqlx-cli/src/opt.rs b/sqlx-cli/src/opt.rs	(rejected hunks)
+@@ -88,6 +88,9 @@ pub enum DatabaseCommand {
+ 
+         #[clap(flatten)]
+         connect_opts: ConnectOpts,
++
++        #[clap(long)]
++        migration_table: Option<String>,
+     },
+ 
+     /// Creates the database specified in your DATABASE_URL and runs any pending migrations.

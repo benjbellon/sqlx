@@ -205,20 +205,6 @@ impl PgConnectOptions {
         self
     }
 
-    /// Get the current host.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use sqlx_core::postgres::PgConnectOptions;
-    /// let options = PgConnectOptions::new()
-    ///     .host("127.0.0.1");
-    /// assert_eq!(options.get_host(), "127.0.0.1");
-    /// ```
-    pub fn get_host(&self) -> &str {
-        self.host.as_str()
-    }
-
     /// Sets the port to connect to at the server host.
     ///
     /// The default port for PostgreSQL is `5432`.
@@ -358,32 +344,6 @@ impl PgConnectOptions {
         self
     }
 
-    /// Sets the SSL client certificate as a PEM-encoded byte slice.
-    ///
-    /// This should be an ASCII-encoded blob that starts with `-----BEGIN CERTIFICATE-----`.
-    ///
-    /// # Example
-    /// Note: embedding SSL certificates and keys in the binary is not advised.
-    /// This is for illustration purposes only.
-    ///
-    /// ```rust
-    /// # use sqlx_core::postgres::{PgSslMode, PgConnectOptions};
-    ///
-    /// const CERT: &[u8] = b"\
-    /// -----BEGIN CERTIFICATE-----
-    /// <Certificate data here.>
-    /// -----END CERTIFICATE-----";
-    ///    
-    /// let options = PgConnectOptions::new()
-    ///     // Providing a CA certificate with less than VerifyCa is pointless
-    ///     .ssl_mode(PgSslMode::VerifyCa)
-    ///     .ssl_client_cert_from_pem(CERT);
-    /// ```
-    pub fn ssl_client_cert_from_pem(mut self, cert: impl AsRef<[u8]>) -> Self {
-        self.ssl_client_cert = Some(CertificateInput::Inline(cert.as_ref().to_vec()));
-        self
-    }
-
     /// Sets the name of a file containing SSL client key.
     ///
     /// # Example
@@ -397,32 +357,6 @@ impl PgConnectOptions {
     /// ```
     pub fn ssl_client_key(mut self, key: impl AsRef<Path>) -> Self {
         self.ssl_client_key = Some(CertificateInput::File(key.as_ref().to_path_buf()));
-        self
-    }
-
-    /// Sets the SSL client key as a PEM-encoded byte slice.
-    ///
-    /// This should be an ASCII-encoded blob that starts with `-----BEGIN PRIVATE KEY-----`.
-    ///
-    /// # Example
-    /// Note: embedding SSL certificates and keys in the binary is not advised.
-    /// This is for illustration purposes only.
-    ///
-    /// ```rust
-    /// # use sqlx_core::postgres::{PgSslMode, PgConnectOptions};
-    ///
-    /// const KEY: &[u8] = b"\
-    /// -----BEGIN PRIVATE KEY-----
-    /// <Private key data here.>
-    /// -----END PRIVATE KEY-----";
-    ///
-    /// let options = PgConnectOptions::new()
-    ///     // Providing a CA certificate with less than VerifyCa is pointless
-    ///     .ssl_mode(PgSslMode::VerifyCa)
-    ///     .ssl_client_key_from_pem(KEY);
-    /// ```
-    pub fn ssl_client_key_from_pem(mut self, key: impl AsRef<[u8]>) -> Self {
-        self.ssl_client_key = Some(CertificateInput::Inline(key.as_ref().to_vec()));
         self
     }
 

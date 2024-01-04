@@ -42,8 +42,7 @@ impl<'r> Decode<'r, Postgres> for Time {
 
             PgValueFormat::Text => Time::parse(
                 value.as_str()?,
-                // Postgres will not include the subsecond part if it's zero.
-                &format_description!("[hour]:[minute]:[second][optional [.[subsecond]]]"),
+                &format_description!("[hour]:[minute]:[second].[subsecond]"),
             )?,
         })
     }

@@ -6,7 +6,8 @@ async fn it_encodes_bool_with_any() -> anyhow::Result<()> {
     sqlx::any::install_default_drivers();
     let mut conn = new::<Any>().await?;
 
-    let res = sqlx::query("INSERT INTO accounts (name, is_active) VALUES (?, ?)")
+    let res = sqlx::query("INSERT INTO accounts VALUES (?, ?, ?)")
+        .bind(87)
         .bind("Harrison Ford")
         .bind(true)
         .execute(&mut conn)

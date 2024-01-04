@@ -70,8 +70,7 @@ SQLx is an async, pure Rust<sub>†</sub> SQL crate featuring compile-time check
 
 -   **Compile-time checked queries** (if you want). See [SQLx is not an ORM](#sqlx-is-not-an-orm).
 
--   **Database Agnostic**. Support for [PostgreSQL], [MySQL], [SQLite].
-    -   [MSSQL] was supported prior to version 0.7, but has been removed pending a full rewrite of the driver as part of our [SQLx Pro initiative].
+-   **Database Agnostic**. Support for [PostgreSQL], [MySQL], [SQLite], and [MSSQL].
 
 -   **Pure Rust**. The Postgres and MySQL/MariaDB drivers are written in pure Rust using **zero** unsafe<sub>††</sub> code.
 
@@ -91,7 +90,6 @@ with C, those interactions are `unsafe`.
 [sqlite]: https://sqlite.org/
 [mysql]: https://www.mysql.com/
 [mssql]: https://www.microsoft.com/en-us/sql-server
-[SQLx Pro initiative]: https://github.com/launchbadge/sqlx/discussions/1616
 
 ---
 
@@ -118,6 +116,9 @@ with C, those interactions are `unsafe`.
 ## Install
 
 SQLx is compatible with the [`async-std`], [`tokio`], and [`actix`] runtimes; and, the [`native-tls`] and [`rustls`] TLS backends. When adding the dependency, you must choose a runtime feature that is `runtime` + `tls`.
+
+NOTE: these examples are for the 0.7 release.
+For the previous stable release, 0.6.3, see [the previous version of this document](https://github.com/launchbadge/sqlx/blob/v0.6.3/README.md).
 
 [`async-std`]: https://github.com/async-rs/async-std
 [`tokio`]: https://github.com/tokio-rs/tokio
@@ -229,12 +230,15 @@ See the `examples/` folder for more in-depth usage.
 
 ### Quickstart
 
+NOTE: these examples are for the 0.7 release.
+For the previous stable release, 0.6.3, see [the previous version of this document](https://github.com/launchbadge/sqlx/blob/v0.6.3/README.md).
+
 ```rust
 use sqlx::postgres::PgPoolOptions;
 // use sqlx::mysql::MySqlPoolOptions;
 // etc.
 
-#[async_std::main] // Requires the `attributes` feature of `async-std`
+#[async_std::main]
 // or #[tokio::main]
 // or #[actix_web::main]
 async fn main() -> Result<(), sqlx::Error> {
@@ -256,7 +260,6 @@ async fn main() -> Result<(), sqlx::Error> {
     Ok(())
 }
 ```
-
 
 ### Connecting
 

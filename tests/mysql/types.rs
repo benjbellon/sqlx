@@ -230,7 +230,7 @@ test_type!(bigdecimal<sqlx::types::BigDecimal>(
     "CAST(12345.6789 AS DECIMAL(9, 4))" == "12345.6789".parse::<sqlx::types::BigDecimal>().unwrap(),
 ));
 
-#[cfg(feature = "rust_decimal")]
+#[cfg(feature = "decimal")]
 test_type!(decimal<sqlx::types::Decimal>(MySql,
     "CAST(0 as DECIMAL(0, 0))" == sqlx::types::Decimal::from_str("0").unwrap(),
     "CAST(1 AS DECIMAL(1, 0))" == sqlx::types::Decimal::from_str("1").unwrap(),

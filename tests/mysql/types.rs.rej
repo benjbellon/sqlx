@@ -1,0 +1,9 @@
+diff a/tests/mysql/types.rs b/tests/mysql/types.rs	(rejected hunks)
+@@ -1,6 +1,6 @@
+ extern crate time_ as time;
+ 
+-#[cfg(feature = "rust_decimal")]
++#[cfg(feature = "decimal")]
+ use std::str::FromStr;
+ 
+ use sqlx::mysql::MySql;

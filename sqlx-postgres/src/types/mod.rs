@@ -11,7 +11,7 @@
 //! | `i64`                                 | BIGINT, BIGSERIAL, INT8                              |
 //! | `f32`                                 | REAL, FLOAT4                                         |
 //! | `f64`                                 | DOUBLE PRECISION, FLOAT8                             |
-//! | `&str`, [`String`]                    | VARCHAR, CHAR(N), TEXT, NAME, CITEXT                 |
+//! | `&str`, [`String`]                    | VARCHAR, CHAR(N), TEXT, NAME                         |
 //! | `&[u8]`, `Vec<u8>`                    | BYTEA                                                |
 //! | `()`                                  | VOID                                                 |
 //! | [`PgInterval`]                        | INTERVAL                                             |
@@ -19,11 +19,6 @@
 //! | [`PgMoney`]                           | MONEY                                                |
 //! | [`PgLTree`]                           | LTREE                                                |
 //! | [`PgLQuery`]                          | LQUERY                                               |
-//! | [`PgCiText`]                          | CITEXT<sup>1</sup>                                   |
-//!
-//! <sup>1</sup> SQLx generally considers `CITEXT` to be compatible with `String`, `&str`, etc.,
-//! but this wrapper type is available for edge cases, such as `CITEXT[]` which Postgres
-//! does not consider to be compatible with `TEXT[]`.
 //!
 //! ### [`bigdecimal`](https://crates.io/crates/bigdecimal)
 //! Requires the `bigdecimal` Cargo feature flag.
@@ -180,7 +175,6 @@ pub(crate) use sqlx_core::types::{Json, Type};
 mod array;
 mod bool;
 mod bytes;
-mod citext;
 mod float;
 mod int;
 mod interval;
@@ -231,7 +225,6 @@ mod mac_address;
 mod bit_vec;
 
 pub use array::PgHasArrayType;
-pub use citext::PgCiText;
 pub use interval::PgInterval;
 pub use lquery::PgLQuery;
 pub use lquery::PgLQueryLevel;

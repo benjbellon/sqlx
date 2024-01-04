@@ -1,0 +1,17 @@
+diff a/sqlx-cli/src/lib.rs b/sqlx-cli/src/lib.rs	(rejected hunks)
+@@ -79,11 +84,13 @@ pub async fn run(opt: Opt) -> Result<()> {
+                 confirmation,
+                 source,
+                 connect_opts,
+-            } => database::reset(&source, &connect_opts, !confirmation.yes).await?,
++                migration_table,
++            } => database::reset(&source, &connect_opts, !confirmation.yes, migration_table).await?,
+             DatabaseCommand::Setup {
+                 source,
+                 connect_opts,
+-            } => database::setup(&source, &connect_opts).await?,
++                migration_table,
++            } => database::setup(&source, &connect_opts, migration_table).await?,
+         },
+ 
+         Command::Prepare {

@@ -2,7 +2,6 @@ import subprocess
 import sys
 import time
 from os import path
-import shutil
 
 # base dir of sqlx workspace
 dir_workspace = path.dirname(path.dirname(path.realpath(__file__)))
@@ -14,12 +13,8 @@ dir_tests = path.join(dir_workspace, "tests")
 # start database server and return a URL to use to connect
 def start_database(driver, database, cwd):
     if driver == "sqlite":
-        database = path.join(cwd, database)
-        (base_path, ext) = path.splitext(database)
-        new_database = f"{base_path}.test{ext}"
-        shutil.copy(database, new_database)
         # short-circuit for sqlite
-        return f"sqlite://{path.join(cwd, new_database)}"
+        return f"sqlite://{path.join(cwd, database)}"
 
     res = subprocess.run(
         ["docker-compose", "up", "-d", driver],

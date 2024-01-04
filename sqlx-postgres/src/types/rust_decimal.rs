@@ -1,4 +1,8 @@
-use rust_decimal::{prelude::Zero, Decimal};
+use num_bigint::{BigInt, Sign};
+use rust_decimal::{
+    prelude::{ToPrimitive, Zero},
+    Decimal,
+};
 
 use crate::decode::Decode;
 use crate::encode::{Encode, IsNull};
@@ -6,8 +10,6 @@ use crate::error::BoxDynError;
 use crate::types::numeric::{PgNumeric, PgNumericSign};
 use crate::types::Type;
 use crate::{PgArgumentBuffer, PgHasArrayType, PgTypeInfo, PgValueFormat, PgValueRef, Postgres};
-
-use rust_decimal::MathematicalOps;
 
 impl Type<Postgres> for Decimal {
     fn type_info() -> PgTypeInfo {

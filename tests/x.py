@@ -79,12 +79,6 @@ def run(command, comment=None, env=None, service=None, tag=None, args=None, data
                 environ["RUSTFLAGS"] += " --cfg sqlite_ipaddr"
             else:
                 environ["RUSTFLAGS"] = "--cfg sqlite_ipaddr"
-            if platform.system() == "Linux":
-                if os.environ.get("LD_LIBRARY_PATH"):
-                    environ["LD_LIBRARY_PATH"]= os.environ.get("LD_LIBRARY_PATH") + ":"+ os.getcwd()
-                else:
-                    environ["LD_LIBRARY_PATH"]=os.getcwd()
-
 
     if service is not None:
         database_url = start_database(service, database="sqlite/sqlite.db" if service == "sqlite" else "sqlx", cwd=dir_tests)
@@ -116,7 +110,7 @@ def run(command, comment=None, env=None, service=None, tag=None, args=None, data
             *command.split(" "),
             *command_args
         ],
-        env=dict(list(os.environ.items()) + list(environ.items())),
+        env=dict(**os.environ, **environ),
         cwd=cwd,
     )
 
@@ -207,15 +201,12 @@ for runtime in ["async-std", "tokio"]:
         #
 
         for version in ["8", "5_7"]:
-            # Since docker mysql 5.7 using yaSSL(It only supports TLSv1.1), avoid running when using rustls.
-            # https://github.com/docker-library/mysql/issues/567
-            if not(version == "5_7" and tls == "rustls"):
-                run(
-                    f"cargo test --no-default-features --features any,mysql,macros,_unstable-all-types,runtime-{runtime},tls-{tls}",
-                    comment=f"test mysql {version}",
-                    service=f"mysql_{version}",
-                    tag=f"mysql_{version}" if runtime == "async-std" else f"mysql_{version}_{runtime}",
-                )
+            run(
+                f"cargo test --no-default-features --features any,mysql,macros,_unstable-all-types,runtime-{runtime},tls-{tls}",
+                comment=f"test mysql {version}",
+                service=f"mysql_{version}",
+                tag=f"mysql_{version}" if runtime == "async-std" else f"mysql_{version}_{runtime}",
+            )
 
             ## +client-ssl
             if tls != "none" and not(version == "5_7" and tls == "rustls"):
@@ -231,7 +222,7 @@ for runtime in ["async-std", "tokio"]:
         # mariadb
         #
 
-        for version in ["verylatest", "10_11", "10_6", "10_5", "10_4"]:
+        for version in ["10_6", "10_5", "10_4", "10_3"]:
             run(
                 f"cargo test --no-default-features --features any,mysql,macros,_unstable-all-types,runtime-{runtime},tls-{tls}",
                 comment=f"test mariadb {version}",

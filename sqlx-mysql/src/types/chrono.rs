@@ -1,7 +1,5 @@
 use bytes::Buf;
-use chrono::{
-    DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc,
-};
+use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc};
 
 use crate::decode::Decode;
 use crate::encode::{Encode, IsNull};
@@ -33,7 +31,7 @@ impl<'r> Decode<'r, MySql> for DateTime<Utc> {
     fn decode(value: MySqlValueRef<'r>) -> Result<Self, BoxDynError> {
         let naive: NaiveDateTime = Decode::<MySql>::decode(value)?;
 
-        Ok(Utc.from_utc_datetime(&naive))
+        Ok(DateTime::from_utc(naive, Utc))
     }
 }
 

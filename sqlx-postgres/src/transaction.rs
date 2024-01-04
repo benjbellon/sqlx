@@ -15,12 +15,10 @@ impl TransactionManager for PgTransactionManager {
 
     fn begin(conn: &mut PgConnection) -> BoxFuture<'_, Result<(), Error>> {
         Box::pin(async move {
-            let rollback = Rollback::new(conn);
-            let query = begin_ansi_transaction_sql(rollback.conn.transaction_depth);
-            rollback.conn.queue_simple_query(&query);
-            rollback.conn.transaction_depth += 1;
-            rollback.conn.wait_until_ready().await?;
-            rollback.defuse();
+            conn.execute(&*begin_ansi_transaction_sql(conn.transaction_depth))
+                .await?;
+
+            conn.transaction_depth += 1;
 
             Ok(())
         })
@@ -58,30 +56,5 @@ impl TransactionManager for PgTransactionManager {
 
             conn.transaction_depth -= 1;
         }
-    }
-}
-
-struct Rollback<'c> {
-    conn: &'c mut PgConnection,
-    defuse: bool,
-}
-
-impl Drop for Rollback<'_> {
-    fn drop(&mut self) {
-        if !self.defuse {
-            PgTransactionManager::start_rollback(self.conn)
-        }
-    }
-}
-
-impl<'c> Rollback<'c> {
-    fn new(conn: &'c mut PgConnection) -> Self {
-        Self {
-            conn,
-            defuse: false,
-        }
-    }
-    fn defuse(mut self) {
-        self.defuse = true;
     }
 }
